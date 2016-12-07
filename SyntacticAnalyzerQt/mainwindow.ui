@@ -25,7 +25,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPlainTextEdit" name="plainTextEdit"/>
+       <widget class="QPlainTextEdit" name="XML_input_plain_text"/>
       </item>
       <item>
        <widget class="QPushButton" name="pushButton">
@@ -46,7 +46,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPlainTextEdit" name="plainTextEdit_2"/>
+       <widget class="QPlainTextEdit" name="debug_output_plain_text"/>
       </item>
      </layout>
     </item>

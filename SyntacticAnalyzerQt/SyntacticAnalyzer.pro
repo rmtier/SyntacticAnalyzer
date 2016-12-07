@@ -13,8 +13,10 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    lexical_analyzer.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    lexical_analyzer.h
 
 FORMS    += mainwindow.ui
