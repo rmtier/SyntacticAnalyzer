@@ -1,0 +1,74 @@
+		<?	version=	?>	.	<	/>	>	</	_	:	-	/	\	,	let	dig	space	$
+xmldocument	1					2
+		
+xmldecl		3			
+
+vernumb						4												4	
+
+element							5
+
+x5								6	7
+
+x4							9			10				8	8	8	8	8	8
+
+starttag						11
+
+endtag										11
+
+words														13	13	13	13	13	13
+
+xxx										15				14	14	14	14	14	14
+
+elements						16
+
+emptyelemtag						17
+
+name											19	20					18
+
+x1						21		22	22		21	21	21				21	21
+
+namechar					25					27	28	25				23	24
+
+number					30	30												29
+
+word														31	31	31	31	31	32
+
+char														35	37	36	33	34
+
+letter																	38
+
+digit																		39
+
+<?
+
+version=
+
+?>
+
+.
+
+<
+
+/>
+
+>
+
+</
+
+_
+
+:
+
+-
+
+/
+
+\
+
+,
+
+let
+
+dig
+
+space
