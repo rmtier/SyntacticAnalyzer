@@ -19,6 +19,12 @@ public:
      */
     void FillTablefromFile(std::string name_of_file);
 
+    /**
+     * @brief LoadRulesFromFile
+     * @param name_of_file
+     */
+    void LoadRulesFromFile(std::string name_of_file);
+
 private:
     /**
      * @brief GetNumberOfLineFromFile
@@ -31,6 +37,7 @@ public:
     unsigned int height_size;
     std::vector<std::string> terminals;
     std::vector<std::string> nonterminals;
+    std::vector<std::string> rules;
 };
 
 #endif // PARSINGTABLE_H

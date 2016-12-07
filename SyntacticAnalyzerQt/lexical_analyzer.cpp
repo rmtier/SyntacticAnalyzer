@@ -3,7 +3,8 @@
 
 LexicalAnalyzer::LexicalAnalyzer()
 {
-
+    number_regex = "[0-9]+";
+    word_regex = "[a-z,0-9,A-Z]+";
 }
 
 void LexicalAnalyzer::ReplaceALLWhiteCharsWithSpace(std::string &str)
@@ -11,6 +12,7 @@ void LexicalAnalyzer::ReplaceALLWhiteCharsWithSpace(std::string &str)
     std::replace( str.begin(), str.end(), '\t', ' ');
     std::replace( str.begin(), str.end(), '\n', ' ');
     std::replace( str.begin(), str.end(), '\r', ' ');
+    std::replace( str.begin(), str.end(), '"', ' ');
 }
 
 void LexicalAnalyzer::SplitString(const std::string &str, char delimiter, std::vector<std::string> &elements)
@@ -27,33 +29,165 @@ void LexicalAnalyzer::SplitString(const std::string &str, char delimiter, std::v
 
 void LexicalAnalyzer::GetAllNumbers(const std::vector<std::string>& input_text, std::vector<std::string>& out_vect)
 {
-    std::regex num_regex("[0-9]+");
+    std::regex num_regex(number_regex);
 
     FindMatch(input_text, num_regex, out_vect);
 }
-
-
 
 void  LexicalAnalyzer::GetAllWords(const std::vector<std::string>& input_text, std::vector<std::string>& out_vect)
 {
-    std::regex num_regex("[a-z,0-9,A-Z]+");
+    std::regex num_regex(word_regex);
 
     FindMatch(input_text, num_regex, out_vect);
 }
 
-void LexicalAnalyzer::FindMatch(const std::vector<std::string>& input_text, std::regex num_regex, std::vector<std::string>& out_vect)
+bool LexicalAnalyzer::IsWord(const std::string &str)
+{
+    std::regex num_regex(number_regex);
+
+    std::vector<std::string> vect;
+
+    FindMatch(str, num_regex, vect);
+
+    if (vect.empty())
+        return false;
+    return true;
+}
+
+bool LexicalAnalyzer::IsNumber(const std::string &str)
+{
+    std::regex num_regex(word_regex);
+
+    std::vector<std::string> vect;
+
+    FindMatch(str, num_regex, vect);
+
+    if (vect.empty())
+        return false;
+    return true;
+}
+
+bool LexicalAnalyzer::IsVersion(const std::string &str)
+{
+    std::regex num_regex("version=");
+
+    std::vector<std::string> vect;
+
+    FindMatch(str, num_regex, vect);
+
+    if (vect.empty())
+        return false;
+    return true;
+}
+
+void LexicalAnalyzer::ParseConfigToTokens(const std::string &input_text, std::vector<Token> &out_vect)
+{
+    std::string stack_for_strings;
+
+    auto CreateString = [] (std::string& stack_for_strings, std::vector<Token> &out_vect, LexicalAnalyzer* lex_a) {
+        std::vector<std::string> strings;
+
+        lex_a->SplitString(stack_for_strings, ' ', strings);
+
+        for (std::string str: strings)
+        {
+            if (lex_a->IsNumber(str))
+                out_vect.push_back(Token(TOKEN_TYPE::number, str));
+            else if (lex_a->IsVersion(str))
+                out_vect.push_back(Token(TOKEN_TYPE::version, str));
+            else if (lex_a->IsWord(str))
+                out_vect.push_back(Token(TOKEN_TYPE::starte, str));
+        }
+        stack_for_strings.clear();
+    };
+
+    unsigned int index = 0;
+    for (; index < input_text.size(); index++ )
+    {
+        switch (input_text[index]) {
+        case '<':
+            CreateString(stack_for_strings, out_vect, this);
+            if (index + 1 < input_text.size())
+            {
+                if (input_text[index+1] == '/')
+                {
+                    out_vect.push_back(Token(TOKEN_TYPE::starte, std::string("</")));
+                    index++;
+                }
+                else if (input_text[index+1] == '?')
+                {
+                    out_vect.push_back(Token(TOKEN_TYPE::start, std::string("<?")));
+                    index++;
+                }else
+                    out_vect.push_back(Token(TOKEN_TYPE::startnq, std::string("<")));
+
+            }else
+                 out_vect.push_back(Token(TOKEN_TYPE::startnq, std::string("<")));
+            break;
+        case '>':
+            CreateString(stack_for_strings, out_vect, this);
+
+            out_vect.push_back(Token(TOKEN_TYPE::startnq, std::string("<")));
+            break;
+        case '/':
+            CreateString(stack_for_strings, out_vect, this);
+
+            if (index + 1 < input_text.size())
+            {
+                if (input_text[index+1] == '>')
+                {
+                    out_vect.push_back(Token(TOKEN_TYPE::ende, std::string("/>")));
+                    index++;
+                }
+                else if (input_text[index+1] == '?')
+                {
+                    out_vect.push_back(Token(TOKEN_TYPE::start, std::string("?>")));
+                    index++;
+                }else
+                    stack_for_strings += input_text[index];
+            }
+            break;
+        case '.':
+            CreateString(stack_for_strings, out_vect, this);
+            out_vect.push_back(Token(TOKEN_TYPE::dot, std::string(".")));
+            break;
+        case ':':
+            CreateString(stack_for_strings, out_vect, this);
+            out_vect.push_back(Token(TOKEN_TYPE::doubledot, std::string(":")));
+            break;
+        case '-':
+            CreateString(stack_for_strings, out_vect, this);
+            out_vect.push_back(Token(TOKEN_TYPE::minus, std::string("-")));
+            break;
+        case '_':
+            CreateString(stack_for_strings, out_vect, this);
+            out_vect.push_back(Token(TOKEN_TYPE::underscore, std::string("_")));
+            break;
+        default:
+            stack_for_strings += input_text[index];
+            break;
+        }
+    }
+}
+
+void LexicalAnalyzer::FindMatch(const std::string& input_text, std::regex& num_regex, std::vector<std::string>& out_vect)
 {
     std::smatch pieces_match;
 
+    if (std::regex_match(input_text, pieces_match, num_regex))
+    {
+        for (size_t i = 0; i < pieces_match.size(); ++i)
+        {
+            std::ssub_match sub_match = pieces_match[i];
+            out_vect.push_back(sub_match.str());
+        }
+    }
+}
+
+void LexicalAnalyzer::FindMatch(const std::vector<std::string>& input_text, std::regex& num_regex, std::vector<std::string>& out_vect)
+{
     for (auto str: input_text)
     {
-        if (std::regex_match(str, pieces_match, num_regex))
-        {
-            for (size_t i = 0; i < pieces_match.size(); ++i)
-            {
-                std::ssub_match sub_match = pieces_match[i];
-                out_vect.push_back(sub_match.str());
-            }
-        }
+        FindMatch(str, num_regex, out_vect);
     }
 }

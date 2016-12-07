@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <regex>
+#include "config.h"
 
 
 class LexicalAnalyzer
@@ -38,6 +39,30 @@ public:
      */
     void GetAllWords(const std::vector<std::string>& input_text, std::vector<std::string>& out_vect);
 
+    /**
+     * @brief IsWord
+     * @param str
+     * @return
+     */
+    bool IsWord(const std::string& str);
+
+    /**
+     * @brief IsNumber
+     * @param str
+     * @return
+     */
+
+    bool IsNumber(const std::string& str);
+
+    bool IsVersion(const std::string& str);
+
+    /**
+     * @brief ParseConfigToTokens
+     * @param input_text
+     * @param out_vect
+     */
+    void ParseConfigToTokens(const std::string& input_text, std::vector<Token>& out_vect);
+
 private:
 
     /**
@@ -46,7 +71,18 @@ private:
      * @param num_regex
      * @param out_vect
      */
-    void FindMatch(const std::vector<std::string>& input_text, std::regex num_regex, std::vector<std::string>& out_vect);
+    void FindMatch(const std::vector<std::string>& input_text, std::regex& num_regex, std::vector<std::string>& out_vect);
+
+    /**
+     * @brief FindMatch
+     * @param input_text
+     * @param num_regex
+     * @param out_vect
+     */
+    void FindMatch(const std::string& input_text, std::regex& num_regex, std::vector<std::string>& out_vect);
+
+    std::string number_regex;
+    std::string word_regex;
 };
 
 #endif // LEXICALANALYZER_H

@@ -70,6 +70,26 @@ void ParsingTable::FillTablefromFile(std::string name_of_file)
     file.close();
 }
 
+void ParsingTable::LoadRulesFromFile(std::string name_of_file)
+{
+    std::ifstream file;
+    std::string line;
+
+    file.open(name_of_file);
+
+    if (file.is_open())
+    {
+         while (!file.eof())
+         {
+             getline(file,line);
+             rules.push_back(line);
+         }
+    }else
+        throw Exception("Coudt not load rules file!!! Please check is is in your directory");
+
+    file.close();
+}
+
 unsigned int ParsingTable::GetNumberOfLineFromFile(std::string name_of_file)
 {
     std::ifstream file;

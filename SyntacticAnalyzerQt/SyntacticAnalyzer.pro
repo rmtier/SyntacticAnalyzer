@@ -21,6 +21,7 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     lexical_analyzer.h \
     parsing_table.h \
-    exception.h
+    exception.h \
+    config.h
 
 FORMS    += mainwindow.ui
