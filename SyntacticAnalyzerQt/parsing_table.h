@@ -2,6 +2,7 @@
 #define PARSINGTABLE_H
 #include <string>
 #include <vector>
+#include "config.h"
 
 struct TableElem
 {
@@ -10,6 +11,8 @@ struct TableElem
 
 class ParsingTable
 {
+    typedef std::vector<std::pair<Nonterminal, std::vector<StackElement>>> RULE_VECT; //nonterminal has vector terminals or nonterminals
+
 public:
     ParsingTable();
 
@@ -18,6 +21,8 @@ public:
      * @param name_of_file
      */
     void FillTablefromFile(std::string name_of_file);
+
+    void FillTerminals(std::string& str);
 
     /**
      * @brief LoadRulesFromFile
@@ -35,9 +40,9 @@ public:
     TableElem** matrix; //matrix
     unsigned int width_size;
     unsigned int height_size;
-    std::vector<std::string> terminals;
-    std::vector<std::string> nonterminals;
-    std::vector<std::string> rules;
+    std::vector<Token> terminals;
+    std::vector<Nonterminal> nonterminals;
+    RULE_VECT rules;
 };
 
 #endif // PARSINGTABLE_H

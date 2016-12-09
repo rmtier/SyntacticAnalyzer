@@ -43,7 +43,7 @@ void  LexicalAnalyzer::GetAllWords(const std::vector<std::string>& input_text, s
 
 bool LexicalAnalyzer::IsWord(const std::string &str)
 {
-    std::regex num_regex(number_regex);
+    std::regex num_regex(word_regex);
 
     std::vector<std::string> vect;
 
@@ -56,7 +56,7 @@ bool LexicalAnalyzer::IsWord(const std::string &str)
 
 bool LexicalAnalyzer::IsNumber(const std::string &str)
 {
-    std::regex num_regex(word_regex);
+    std::regex num_regex(number_regex);
 
     std::vector<std::string> vect;
 
@@ -84,26 +84,37 @@ void LexicalAnalyzer::ParseConfigToTokens(const std::string &input_text, std::ve
 {
     std::string stack_for_strings;
 
-    auto CreateString = [] (std::string& stack_for_strings, std::vector<Token> &out_vect, LexicalAnalyzer* lex_a) {
-        std::vector<std::string> strings;
+    auto CreteToken = [] (TOKEN_TYPE type, std::string & str) -> Token
+    {
+        Token t;
+        t.type = type;
+        t.value = str;
+        return t;
+    };
 
-        lex_a->SplitString(stack_for_strings, ' ', strings);
-
-        for (std::string str: strings)
+    auto CreateString = [&CreteToken] (std::string& str, std::vector<Token> &out_vect, LexicalAnalyzer* lex_a) {
+        if (lex_a->IsVersion(str))
         {
-            if (lex_a->IsNumber(str))
-                out_vect.push_back(Token(TOKEN_TYPE::number, str));
-            else if (lex_a->IsVersion(str))
-                out_vect.push_back(Token(TOKEN_TYPE::version, str));
-            else if (lex_a->IsWord(str))
-                out_vect.push_back(Token(TOKEN_TYPE::starte, str));
-        }
-        stack_for_strings.clear();
+            out_vect.push_back(CreteToken(TOKEN_TYPE::version, str));
+        }else
+            for (char c: str)
+            {
+                if (lex_a->IsNumber(std::string(&c)))
+                    out_vect.push_back(CreteToken(TOKEN_TYPE::dig, std::string(&c)));
+                else if (lex_a->IsWord(std::string(&c)))
+                    out_vect.push_back(CreteToken(TOKEN_TYPE::let, std::string(&c)));
+            }
+        str.clear();
     };
 
     unsigned int index = 0;
     for (; index < input_text.size(); index++ )
     {
+        if ( ::isspace(input_text[index]) )
+        {
+            CreateString(stack_for_strings, out_vect, this);
+            continue;
+        }
         switch (input_text[index]) {
         case '<':
             CreateString(stack_for_strings, out_vect, this);
@@ -111,23 +122,23 @@ void LexicalAnalyzer::ParseConfigToTokens(const std::string &input_text, std::ve
             {
                 if (input_text[index+1] == '/')
                 {
-                    out_vect.push_back(Token(TOKEN_TYPE::starte, std::string("</")));
+                    out_vect.push_back(CreteToken(TOKEN_TYPE::starte, std::string("</")));
                     index++;
                 }
                 else if (input_text[index+1] == '?')
                 {
-                    out_vect.push_back(Token(TOKEN_TYPE::start, std::string("<?")));
+                    out_vect.push_back(CreteToken(TOKEN_TYPE::start, std::string("<?")));
                     index++;
                 }else
-                    out_vect.push_back(Token(TOKEN_TYPE::startnq, std::string("<")));
+                    out_vect.push_back(CreteToken(TOKEN_TYPE::startnq, std::string("<")));
 
             }else
-                 out_vect.push_back(Token(TOKEN_TYPE::startnq, std::string("<")));
+                 out_vect.push_back(CreteToken(TOKEN_TYPE::startnq, std::string("<")));
             break;
         case '>':
             CreateString(stack_for_strings, out_vect, this);
 
-            out_vect.push_back(Token(TOKEN_TYPE::startnq, std::string("<")));
+            out_vect.push_back(CreteToken(TOKEN_TYPE::startnq, std::string("<")));
             break;
         case '/':
             CreateString(stack_for_strings, out_vect, this);
@@ -136,32 +147,52 @@ void LexicalAnalyzer::ParseConfigToTokens(const std::string &input_text, std::ve
             {
                 if (input_text[index+1] == '>')
                 {
-                    out_vect.push_back(Token(TOKEN_TYPE::ende, std::string("/>")));
+                    out_vect.push_back(CreteToken(TOKEN_TYPE::ende, std::string("/>")));
                     index++;
                 }
                 else if (input_text[index+1] == '?')
                 {
-                    out_vect.push_back(Token(TOKEN_TYPE::start, std::string("?>")));
+                    out_vect.push_back(CreteToken(TOKEN_TYPE::start, std::string("?>")));
                     index++;
                 }else
-                    stack_for_strings += input_text[index];
+                    out_vect.push_back(CreteToken(TOKEN_TYPE::slash, std::string("/")));
+            }
+            break;
+        case '?':
+            CreateString(stack_for_strings, out_vect, this);
+
+            if (index + 1 < input_text.size())
+            {
+                if (input_text[index+1] == '>')
+                {
+                    out_vect.push_back(CreteToken(TOKEN_TYPE::end, std::string("?>")));
+                    index++;
+                }
             }
             break;
         case '.':
             CreateString(stack_for_strings, out_vect, this);
-            out_vect.push_back(Token(TOKEN_TYPE::dot, std::string(".")));
+            out_vect.push_back(CreteToken(TOKEN_TYPE::dot, std::string(".")));
             break;
         case ':':
             CreateString(stack_for_strings, out_vect, this);
-            out_vect.push_back(Token(TOKEN_TYPE::doubledot, std::string(":")));
+            out_vect.push_back(CreteToken(TOKEN_TYPE::doubledot, std::string(":")));
             break;
         case '-':
             CreateString(stack_for_strings, out_vect, this);
-            out_vect.push_back(Token(TOKEN_TYPE::minus, std::string("-")));
+            out_vect.push_back(CreteToken(TOKEN_TYPE::minus, std::string("-")));
             break;
         case '_':
             CreateString(stack_for_strings, out_vect, this);
-            out_vect.push_back(Token(TOKEN_TYPE::underscore, std::string("_")));
+            out_vect.push_back(CreteToken(TOKEN_TYPE::underscore, std::string("_")));
+            break;
+        case '\\':
+            CreateString(stack_for_strings, out_vect, this);
+            out_vect.push_back(CreteToken(TOKEN_TYPE::forward_slash, std::string("\\")));
+            break;
+        case ',':
+            CreateString(stack_for_strings, out_vect, this);
+            out_vect.push_back(CreteToken(TOKEN_TYPE::comma, std::string(",")));
             break;
         default:
             stack_for_strings += input_text[index];

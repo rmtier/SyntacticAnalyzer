@@ -1,10 +1,12 @@
 #include "parsing_table.h"
 #include "exception.h"
-#include<iostream>
-#include<fstream>
+#include <iostream>
+#include <fstream>
 #include "lexical_analyzer.h"
 #include <algorithm>
 #include <ostream>
+#include "assert.h"
+#include "config.h"
 
 ParsingTable::ParsingTable()
 {
@@ -29,7 +31,7 @@ void ParsingTable::FillTablefromFile(std::string name_of_file)
          {
              getline(file,line);
              lex_anal.ReplaceALLWhiteCharsWithSpace(line);
-             lex_anal.SplitString(line, ' ', terminals); //get all terminals
+             FillTerminals(line);
              width_size = terminals.size() + 1;
          }
          else
@@ -52,15 +54,15 @@ void ParsingTable::FillTablefromFile(std::string name_of_file)
              lex_anal.ReplaceALLWhiteCharsWithSpace(line);
              lex_anal.SplitString(line, ' ', temp_vect);
 
-             if (std::find(terminals.begin(), terminals.end(), temp_vect.front()) == terminals.end())
-             {
-                 nonterminals.push_back(temp_vect.front());
-             }
              //fill matrix
              unsigned int index_in_matrix = 0;
-             for (std::string str: temp_vect)
+             for (unsigned int index = 2; index < temp_vect.size(); index++ )
+             {
+                 std::string& str = temp_vect[index];
+                 if (str == "")
+                     continue;
                  matrix[index_in_row][index_in_matrix++].value = str;
-
+             }
              index_in_row++;
          }
     }else
@@ -70,10 +72,68 @@ void ParsingTable::FillTablefromFile(std::string name_of_file)
     file.close();
 }
 
+void ParsingTable::FillTerminals(std::string& str)
+{
+    std::vector<std::string> str_vect;
+    LexicalAnalyzer lex_anal;
+    lex_anal.ReplaceALLWhiteCharsWithSpace(str);
+    lex_anal.SplitString(str, ' ', str_vect);
+
+    auto CreteToken = [] (TOKEN_TYPE type, std::string & str) -> Token
+    {
+        Token t;
+        t.type = type;
+        t.value = str;
+        return t;
+    };
+
+    for (std::string& cur_str: str_vect)
+    {
+        if(cur_str == "<")
+            terminals.push_back(CreteToken(TOKEN_TYPE::startnq, cur_str));
+        else if(cur_str == ">")
+            terminals.push_back(CreteToken(TOKEN_TYPE::endnq, cur_str));
+        else if(cur_str == "</")
+            terminals.push_back(CreteToken(TOKEN_TYPE::starte, cur_str));
+        else if(cur_str == "/>")
+            terminals.push_back(CreteToken(TOKEN_TYPE::ende, cur_str));
+        else if(cur_str == "<?")
+            terminals.push_back(CreteToken(TOKEN_TYPE::start, cur_str));
+        else if(cur_str == "?>")
+            terminals.push_back(CreteToken(TOKEN_TYPE::end, cur_str));
+        else if(cur_str == "/")
+            terminals.push_back(CreteToken(TOKEN_TYPE::slash, cur_str));
+        else if(cur_str == "\\")
+            terminals.push_back(CreteToken(TOKEN_TYPE::forward_slash, cur_str));
+        else if(cur_str == ",")
+            terminals.push_back(CreteToken(TOKEN_TYPE::comma, cur_str));
+        else if(cur_str == ".")
+            terminals.push_back(CreteToken(TOKEN_TYPE::dot, cur_str));
+        else if(cur_str == ":")
+            terminals.push_back(CreteToken(TOKEN_TYPE::doubledot, cur_str));
+        else if(cur_str == "version=")
+            terminals.push_back(CreteToken(TOKEN_TYPE::version, cur_str));
+        else if(cur_str == "-")
+            terminals.push_back(CreteToken(TOKEN_TYPE::minus, cur_str));
+        else if(cur_str == "_")
+            terminals.push_back(CreteToken(TOKEN_TYPE::underscore, cur_str));
+        else if(cur_str == "let")
+            terminals.push_back(CreteToken(TOKEN_TYPE::let, cur_str));
+        else if(cur_str == "dig")
+            terminals.push_back(CreteToken(TOKEN_TYPE::dig, cur_str));
+        else if(cur_str == "space")
+            terminals.push_back(CreteToken(TOKEN_TYPE::space, cur_str));
+        else if(cur_str == "$")
+            terminals.push_back(CreteToken(TOKEN_TYPE::end_of_line, cur_str));
+
+    }
+}
+
 void ParsingTable::LoadRulesFromFile(std::string name_of_file)
 {
     std::ifstream file;
     std::string line;
+    LexicalAnalyzer lex_anal;
 
     file.open(name_of_file);
 
@@ -82,7 +142,59 @@ void ParsingTable::LoadRulesFromFile(std::string name_of_file)
          while (!file.eof())
          {
              getline(file,line);
-             rules.push_back(line);
+
+             if (line == "")
+                 continue;
+
+             std::vector<std::string> vect;
+
+             lex_anal.SplitString(line, ' ', vect);
+
+             Nonterminal n;
+             n.value = vect.front();
+             nonterminals.push_back(n);
+
+             //move iterator to first non tern, or term
+             auto it = vect.begin();
+             it = std::next(it);
+             it = std::next(it);
+
+             std::vector<StackElement> rules;
+             while (it != vect.end() )
+             {
+                 if (it->at(0) == '\'') //if is terminal
+                 {
+                     std::string & str = *it;
+
+                     //erase "'"
+                     str.erase(std::remove_if(str.begin(), str.end(), [] (char c) {
+                         return (c == '\'');
+                     }), str.end());
+
+                     //create token
+                     std::vector<Token> token_vect;
+                     lex_anal.ParseConfigToTokens(str, token_vect);
+
+                     assert(token_vect.size() == 1);
+
+                     StackElement s;
+                     s.type = ELEMENT_TYPE::terminal;
+                     s.terminal = token_vect.front();
+                     rules.push_back( s );
+                 }
+                 else
+                 {
+                     StackElement s;
+                     Nonterminal n;
+                     n.value = *it;
+                     s.type = ELEMENT_TYPE::nonterminal;
+                     s.nonterminal = n;
+                     rules.push_back( s );
+                 }
+                 ++it;
+             }
+
+             this->rules.push_back(std::make_pair(n, rules));
          }
     }else
         throw Exception("Coudt not load rules file!!! Please check is is in your directory");

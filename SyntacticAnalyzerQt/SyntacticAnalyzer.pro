@@ -16,12 +16,14 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     lexical_analyzer.cpp \
     parsing_table.cpp \
-    exception.cpp
+    exception.cpp \
+    syntactic_analyzer.cpp
 
 HEADERS  += mainwindow.h \
     lexical_analyzer.h \
     parsing_table.h \
     exception.h \
-    config.h
+    config.h \
+    syntactic_analyzer.h
 
 FORMS    += mainwindow.ui

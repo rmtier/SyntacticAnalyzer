@@ -4,6 +4,7 @@
 #include "exception.h"
 #include <QMessageBox>
 #include <parsing_table.h>
+#include "syntactic_analyzer.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -63,10 +64,20 @@ void MainWindow::on_pushButton_clicked()
 
         pars_table.LoadRulesFromFile("grammar.txt");
 
-        for (int i = 0; i < pars_table.rules.size(); i++)
+
+        SyntacticAnalyzer syn_anal;
+
+        QMessageBox msgBox;
+
+        if (syn_anal.VerifyGrammer(pars_table, token_vect))
         {
-             ui->debug_output_plain_text->appendPlainText(QString::fromStdString(pars_table.rules.at(i)));
+            msgBox.setText("Congratulation!!!! Grammer is OK :)");
+        }else
+        {
+            msgBox.setText("Bad lack!! you have some misstake :)");
         }
+
+        msgBox.exec();
     }
     catch(Exception e)
     {
