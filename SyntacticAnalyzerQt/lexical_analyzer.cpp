@@ -96,7 +96,8 @@ void LexicalAnalyzer::ParseConfigToTokens(const std::string &input_text, std::ve
         if (lex_a->IsVersion(str))
         {
             out_vect.push_back(CreteToken(TOKEN_TYPE::version, str));
-        }else
+        }
+        else
             for (char c: str)
             {
                 if (lex_a->IsNumber(std::string(&c)))
@@ -112,7 +113,15 @@ void LexicalAnalyzer::ParseConfigToTokens(const std::string &input_text, std::ve
     {
         if ( ::isspace(input_text[index]) )
         {
-            CreateString(stack_for_strings, out_vect, this);
+            std::string space_string(&input_text[index]);
+
+            for (int i = index; i < input_text.size(); ++i)
+                if (::isspace(input_text[i]))
+                {
+                    space_string += input_text[i];
+                    index++;
+                }
+            out_vect.push_back(CreteToken(TOKEN_TYPE::space, space_string));
             continue;
         }
         switch (input_text[index]) {
@@ -157,6 +166,9 @@ void LexicalAnalyzer::ParseConfigToTokens(const std::string &input_text, std::ve
                 }else
                     out_vect.push_back(CreteToken(TOKEN_TYPE::slash, std::string("/")));
             }
+            else
+                out_vect.push_back(CreteToken(TOKEN_TYPE::slash, std::string("/")));
+
             break;
         case '?':
             CreateString(stack_for_strings, out_vect, this);
@@ -199,6 +211,7 @@ void LexicalAnalyzer::ParseConfigToTokens(const std::string &input_text, std::ve
             break;
         }
     }
+    CreateString(stack_for_strings, out_vect, this);
 }
 
 void LexicalAnalyzer::FindMatch(const std::string& input_text, std::regex& num_regex, std::vector<std::string>& out_vect)

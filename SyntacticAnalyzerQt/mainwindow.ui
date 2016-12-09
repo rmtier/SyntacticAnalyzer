@@ -25,7 +25,16 @@
        </widget>
       </item>
       <item>
-       <widget class="QPlainTextEdit" name="XML_input_plain_text"/>
+       <widget class="QPlainTextEdit" name="XML_input_plain_text">
+        <property name="plainText">
+         <string>&lt;note&gt;
+&lt;to&gt;Tove&lt;/to&gt;
+&lt;from&gt;Jani&lt;/from&gt;
+&lt;heading&gt;Reminder&lt;/heading&gt;
+&lt;body&gt;Don't forget me this weekend!&lt;/body&gt;
+&lt;/note&gt;</string>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QPushButton" name="pushButton">

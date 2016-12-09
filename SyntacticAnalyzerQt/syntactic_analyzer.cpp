@@ -15,6 +15,7 @@ bool SyntacticAnalyzer::VerifyGrammer(const ParsingTable &table, const std::vect
     const std::vector<Nonterminal> nonterminals = table.nonterminals;
     const std::vector<Token> & terminals = table.terminals;
     std::vector<Token> reversed_token_vec(token.rbegin(), token.rend());
+    std::vector<std::string> all_vect;
 
     unsigned int y = 0;
     unsigned int x = 0;
@@ -24,6 +25,9 @@ bool SyntacticAnalyzer::VerifyGrammer(const ParsingTable &table, const std::vect
     s.type = ELEMENT_TYPE::nonterminal;
     s.nonterminal = nonterminals.front();
     stack.push_back(s);
+
+    for (int i = 0; i < table.height_size; i++)
+        all_vect.push_back( table.matrix[i][0].value );
 
     //read all tokens
     while (!reversed_token_vec.empty())
@@ -44,28 +48,20 @@ bool SyntacticAnalyzer::VerifyGrammer(const ParsingTable &table, const std::vect
             throw Exception("UNKNOW terminal while verifying grammer");
         y = std::distance(terminals.begin(), it) + 1;
 
-        //find nonterminal index
-        if (stack_elem.type == ELEMENT_TYPE::nonterminal)
+        //find x index
+        std::vector<std::string>::iterator s_it = all_vect.begin();
+        if (stack_elem.type == ELEMENT_TYPE::terminal)
         {
-            std::vector<Nonterminal>::const_iterator n_it = nonterminals.begin();
-            for (; n_it != nonterminals.end(); ++n_it)
-            {
-                if (n_it->value == stack_elem.nonterminal.value)
-                    break;
-            }
-
-            if (n_it == nonterminals.end())
-                throw Exception("UNKNOW nonterminal while verifying grammer");
-            x = std::distance(nonterminals.begin(), n_it);
-        }else
-        {
-            std::vector<Token>::const_iterator it = std::find_if(terminals.begin(), terminals.end(),  [&stack_elem] (const Token & t1) {
-                    return (stack_elem.terminal.type == t1.type);
-            });
-            if (it == terminals.end())
-                throw Exception("UNKNOW terminal while verifying grammer");
-            x = std::distance(terminals.begin(), it) + nonterminals.size();
+           s_it = std::find(all_vect.begin(), all_vect.end(), stack_elem.terminal.value);
         }
+        else
+        {
+           s_it = std::find(all_vect.begin(), all_vect.end(), stack_elem.nonterminal.value);
+        }
+
+        if (s_it == all_vect.end())
+            throw Exception("UNKNOW nonterminal while verifying grammer");
+        x = std::distance(all_vect.begin(), s_it);
 
         //view from matrix
         std::string value = table.matrix[x][y].value;
@@ -77,8 +73,9 @@ bool SyntacticAnalyzer::VerifyGrammer(const ParsingTable &table, const std::vect
                 stack.pop_back();
 
             //push all terminals and non termainls
-            for (const StackElement & se: table.rules[nonterminal_index].second)
-                stack.push_back(se);
+            int r_index = table.rules[nonterminal_index-1].second.size() - 1;
+            for (; r_index >= 0; r_index--)
+                stack.push_back( table.rules[nonterminal_index-1].second.at(r_index));
         }
         else if (value == "error")
         {

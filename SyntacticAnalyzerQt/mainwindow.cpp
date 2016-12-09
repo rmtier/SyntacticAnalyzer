@@ -62,7 +62,7 @@ void MainWindow::on_pushButton_clicked()
             ui->debug_output_plain_text->appendPlainText(QString::fromStdString(s));
         }
 
-        pars_table.LoadRulesFromFile("grammar.txt");
+        pars_table.LoadRulesFromFile("new_grammar.txt");
 
 
         SyntacticAnalyzer syn_anal;

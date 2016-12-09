@@ -67,7 +67,7 @@ void ParsingTable::FillTablefromFile(std::string name_of_file)
 
              //fill matrix
              unsigned int index_in_matrix = 0;
-             for (unsigned int index = 2; index < temp_vect.size(); index++ )
+             for (unsigned int index = 0; index < temp_vect.size(); index++ )
              {
                  std::string& str = temp_vect[index];
                  if (str == "")
@@ -193,13 +193,36 @@ void ParsingTable::LoadRulesFromFile(std::string name_of_file)
 
                      //create token
                      std::vector<Token> token_vect;
-                     lex_anal.ParseConfigToTokens(str, token_vect);
-
-                     assert(token_vect.size() == 1);
 
                      StackElement s;
                      s.type = ELEMENT_TYPE::terminal;
-                     s.terminal = token_vect.front();
+
+                     if (str != "space")
+                     {
+                         Token t;
+                         t.type = TOKEN_TYPE::space;
+                         t.value = str;
+                         s.terminal = t;
+                     }else if (str != "dig")
+                     {
+                         Token t;
+                         t.type = TOKEN_TYPE::dig;
+                         t.value = str;
+                         s.terminal = t;
+                     }
+                     else if (str != "let")
+                     {
+                         Token t;
+                         t.type = TOKEN_TYPE::let;
+                         t.value = str;
+                         s.terminal = t;
+                     }else
+                     {
+                         lex_anal.ParseConfigToTokens(str, token_vect);
+                         assert(token_vect.size() == 1);
+                         s.terminal = token_vect.front();
+                     }
+
                      rules.push_back( s );
                  }
                  else
