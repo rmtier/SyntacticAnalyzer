@@ -16,6 +16,8 @@ class ParsingTable
 public:
     ParsingTable();
 
+    ~ParsingTable();
+
     /**
      * @brief FillTablefromFile fill table from file
      * @param name_of_file

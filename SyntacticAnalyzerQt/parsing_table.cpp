@@ -10,7 +10,18 @@
 
 ParsingTable::ParsingTable()
 {
+    matrix = nullptr;
+}
 
+ParsingTable::~ParsingTable()
+{
+    if (matrix != nullptr)
+    {
+        for (int i = 0; i < height_size; i++)
+            delete [] matrix[i];
+
+        delete [] matrix;
+    }
 }
 
 void ParsingTable::FillTablefromFile(std::string name_of_file)
@@ -152,7 +163,16 @@ void ParsingTable::LoadRulesFromFile(std::string name_of_file)
 
              Nonterminal n;
              n.value = vect.front();
-             nonterminals.push_back(n);
+
+             //filter nonterminals
+             bool is_in_Nonterminals = false;
+             std::vector<Nonterminal>::iterator n_it = nonterminals.begin();
+             for (; n_it != nonterminals.end(); ++n_it)
+                 if (n_it->value == n.value)
+                     is_in_Nonterminals = true;
+
+             if (!is_in_Nonterminals)
+                nonterminals.push_back(n);
 
              //move iterator to first non tern, or term
              auto it = vect.begin();

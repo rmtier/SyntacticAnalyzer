@@ -138,7 +138,7 @@ void LexicalAnalyzer::ParseConfigToTokens(const std::string &input_text, std::ve
         case '>':
             CreateString(stack_for_strings, out_vect, this);
 
-            out_vect.push_back(CreteToken(TOKEN_TYPE::startnq, std::string("<")));
+            out_vect.push_back(CreteToken(TOKEN_TYPE::startnq, std::string(">")));
             break;
         case '/':
             CreateString(stack_for_strings, out_vect, this);
