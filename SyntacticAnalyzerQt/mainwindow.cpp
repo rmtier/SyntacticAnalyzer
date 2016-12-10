@@ -176,6 +176,7 @@ void MainWindow::on_step_button_clicked()
             syn_anal.GetMatrixIndex(pars_table, *actual_token_it, stack.back(), all_vect, x, y);
             QModelIndex index = ui->table_widget->model()->index(x, y-1);
             ui->table_widget->selectionModel()->select(index, QItemSelectionModel::Select);
+            ui->table_widget->scrollTo(index, QAbstractItemView::PositionAtCenter);
         }
 
         PrintStack();
