@@ -113,6 +113,7 @@ void LexicalAnalyzer::ParseConfigToTokens(const std::string &input_text, std::ve
     {
         if ( ::isspace(input_text[index]) )
         {
+            CreateString(stack_for_strings, out_vect, this);
             std::string space_string( 1, input_text[index]);
 
             for (int i = index+1; i < input_text.size(); ++i)
@@ -149,7 +150,7 @@ void LexicalAnalyzer::ParseConfigToTokens(const std::string &input_text, std::ve
         case '>':
             CreateString(stack_for_strings, out_vect, this);
 
-            out_vect.push_back(CreteToken(TOKEN_TYPE::startnq, std::string(">")));
+            out_vect.push_back(CreteToken(TOKEN_TYPE::endnq, std::string(">")));
             break;
         case '/':
             CreateString(stack_for_strings, out_vect, this);
@@ -207,6 +208,10 @@ void LexicalAnalyzer::ParseConfigToTokens(const std::string &input_text, std::ve
         case ',':
             CreateString(stack_for_strings, out_vect, this);
             out_vect.push_back(CreteToken(TOKEN_TYPE::comma, std::string(",")));
+            break;
+        case '=':
+            stack_for_strings += input_text[index];
+            CreateString(stack_for_strings, out_vect, this);
             break;
         default:
             stack_for_strings += input_text[index];

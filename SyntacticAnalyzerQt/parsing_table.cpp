@@ -197,23 +197,29 @@ void ParsingTable::LoadRulesFromFile(std::string name_of_file)
                      StackElement s;
                      s.type = ELEMENT_TYPE::terminal;
 
-                     if (str != "space")
+                     if (str == "space")
                      {
                          Token t;
                          t.type = TOKEN_TYPE::space;
                          t.value = str;
                          s.terminal = t;
-                     }else if (str != "dig")
+                     }else if (str == "dig")
                      {
                          Token t;
                          t.type = TOKEN_TYPE::dig;
                          t.value = str;
                          s.terminal = t;
                      }
-                     else if (str != "let")
+                     else if (str == "let")
                      {
                          Token t;
                          t.type = TOKEN_TYPE::let;
+                         t.value = str;
+                         s.terminal = t;
+                     } else if (str == "EPSILON")
+                     {
+                         Token t;
+                         t.type = TOKEN_TYPE::epsilon;
                          t.value = str;
                          s.terminal = t;
                      }else

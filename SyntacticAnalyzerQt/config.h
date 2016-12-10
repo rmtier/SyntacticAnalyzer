@@ -5,7 +5,7 @@
 enum TOKEN_TYPE{
    word, number, start, end, dot, startnq, endnq, starte,
    ende, underscore, minus, doubledot, version,
-   slash, forward_slash, comma, dig, let, space, end_of_line
+   slash, forward_slash, comma, dig, let, space, end_of_line, epsilon
 };
 
 struct Token

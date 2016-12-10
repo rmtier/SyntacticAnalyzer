@@ -58,6 +58,14 @@ void SyntacticAnalyzer::GetMatrixIndex(const ParsingTable &table, const Token &t
 {
     const std::vector<Token> & terminals = table.terminals;
 
+    //if is epsion return 0,0
+    if (stack_elem.type == ELEMENT_TYPE::terminal
+            && stack_elem.terminal.type == TOKEN_TYPE::epsilon)
+    {
+        x = 0; y = 0;
+        return;
+    }
+
     //find terminal index
     std::vector<Token>::const_iterator it = std::find_if(terminals.begin(), terminals.end(),  [&token] (const Token & t1) {
             return (token.type == t1.type);
@@ -102,11 +110,20 @@ bool SyntacticAnalyzer::MakeStepInGrammer(const ParsingTable &table, std::vector
         //push all terminals and non termainls
         int r_index = table.rules[nonterminal_index-1].second.size() - 1;
         for (; r_index >= 0; r_index--)
-            stack.push_back( table.rules[nonterminal_index-1].second.at(r_index));
+        {
+            const StackElement& se = table.rules[nonterminal_index-1].second.at(r_index);
+
+            if (se.type == ELEMENT_TYPE::terminal && se.terminal.type == TOKEN_TYPE::epsilon)
+                continue;
+
+            stack.push_back( se );
+        }
     }
     else if (value == "error")
     {
-        if (!stack.empty())
+        if (token_it->type == TOKEN_TYPE::space)
+            token_it++;
+        else if (!stack.empty())
             stack.pop_back();
     }
     else if (value == "pop")

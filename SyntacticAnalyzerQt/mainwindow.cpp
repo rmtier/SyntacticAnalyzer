@@ -156,18 +156,23 @@ void MainWindow::on_step_button_clicked()
             syn_anal.InsertFirstElementInStack(pars_table, stack);
         }
 
-        if (stack.empty() && actual_token_it != token_vect.end())
-            throw Exception("Bad INPUT");
-        else if (stack.empty() && actual_token_it == token_vect.end())
-            throw Exception("Good grammer");
-
         std::vector<std::string> all_vect;
         syn_anal.FillAllVector(pars_table, all_vect);
 
         unsigned int x = 0;
         unsigned int y = 0;
 
-        syn_anal.MakeStepInGrammer(pars_table, actual_token_it, stack, all_vect, x, y);
+        int number_of_jumps = ui->number_of_jumps_edit_box->text().toInt();
+
+        if (number_of_jumps == 0)
+            throw Exception("Select other jump number");
+
+        for (int i = 0; i < number_of_jumps; i++)
+        {
+            if (stack.empty() || actual_token_it == token_vect.end())
+                break;
+            syn_anal.MakeStepInGrammer(pars_table, actual_token_it, stack, all_vect, x, y);
+        }
 
         ui->table_widget->clearSelection();
 
@@ -181,9 +186,17 @@ void MainWindow::on_step_button_clicked()
 
         PrintStack();
 
-        ui->token_list_widget->item(std::distance(token_vect.begin(), actual_token_it))->setSelected(true);
+        QListWidgetItem * item = ui->token_list_widget->item(std::distance(token_vect.begin(), actual_token_it));
 
+        item->setSelected(true);
 
+        QModelIndex index = ui->token_list_widget->model()->index(std::distance(token_vect.begin(), actual_token_it), 0);
+        ui->token_list_widget->scrollTo(index, QAbstractItemView::EnsureVisible);
+
+        if (stack.empty() && actual_token_it != token_vect.end())
+            throw Exception("Bad INPUT");
+        else if (stack.empty() && actual_token_it == token_vect.end())
+            throw Exception("Good grammer");
     }
     catch(Exception e)
     {
