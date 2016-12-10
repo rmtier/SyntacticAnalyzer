@@ -100,10 +100,10 @@ void LexicalAnalyzer::ParseConfigToTokens(const std::string &input_text, std::ve
         else
             for (char c: str)
             {
-                if (lex_a->IsNumber(std::string(&c)))
-                    out_vect.push_back(CreteToken(TOKEN_TYPE::dig, std::string(&c)));
-                else if (lex_a->IsWord(std::string(&c)))
-                    out_vect.push_back(CreteToken(TOKEN_TYPE::let, std::string(&c)));
+                if (lex_a->IsNumber(std::string(1, c)))
+                    out_vect.push_back(CreteToken(TOKEN_TYPE::dig, std::string(1, c)));
+                else if (lex_a->IsWord(std::string(1, c)))
+                    out_vect.push_back(CreteToken(TOKEN_TYPE::let, std::string(1, c)));
             }
         str.clear();
     };
@@ -113,14 +113,16 @@ void LexicalAnalyzer::ParseConfigToTokens(const std::string &input_text, std::ve
     {
         if ( ::isspace(input_text[index]) )
         {
-            std::string space_string(&input_text[index]);
+            std::string space_string( 1, input_text[index]);
 
-            for (int i = index; i < input_text.size(); ++i)
+            for (int i = index+1; i < input_text.size(); ++i)
                 if (::isspace(input_text[i]))
                 {
                     space_string += input_text[i];
                     index++;
-                }
+                }else
+                    break;
+
             out_vect.push_back(CreteToken(TOKEN_TYPE::space, space_string));
             continue;
         }
