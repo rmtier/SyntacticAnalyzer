@@ -1,16 +1,16 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "lexical_analyzer.h"
-#include "exception.h"
+
 #include <QMessageBox>
 #include <parsing_table.h>
-#include "syntactic_analyzer.h"
+#include <QTableWidgetItem>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    data_filled = false;
 }
 
 MainWindow::~MainWindow()
@@ -22,60 +22,24 @@ void MainWindow::on_pushButton_clicked()
 {
     ui->XML_input_plain_text->toPlainText().clear();
 
-    ///////////////////////////////////////////
-    //// this is like main loop for processing
-    /// ////////////////////////////////////////
-
     try
     {
-        std::string XML_input = ui->XML_input_plain_text->toPlainText().toStdString();
-
-        LexicalAnalyzer lex_analyzer;
-
-        std::vector<Token> token_vect;
-
-        lex_analyzer.ReplaceALLWhiteCharsWithSpace(XML_input);
-
-        lex_analyzer.ParseConfigToTokens(XML_input, token_vect);
-
-        //debug numbers
-        {
-           for (Token t: token_vect)
-                ui->debug_output_plain_text->appendPlainText(QString::fromStdString(t.value));
-        }
-
-        //fill matrix from file
-        ParsingTable pars_table;
-
-        pars_table.FillTablefromFile("table.txt");
-
-        //debug
-        for (int i = 0; i < pars_table.height_size; i++)
-        {
-            std::string s = "";
-
-            for (int j = 0; j < pars_table.width_size; j++)
-            {
-                s += pars_table.matrix[i][j].value;
-                s += " ";
-            }
-            ui->debug_output_plain_text->appendPlainText(QString::fromStdString(s));
-        }
-
-        pars_table.LoadRulesFromFile("new_grammar.txt");
-
+        FillData();
 
         SyntacticAnalyzer syn_anal;
 
         QMessageBox msgBox;
 
-        if (syn_anal.VerifyGrammer(pars_table, token_vect))
+        if (syn_anal.VerifyGrammer(pars_table, token_vect, actual_token_it, stack))
         {
             msgBox.setText("Congratulation!!!! Grammer is OK :)");
         }else
         {
             msgBox.setText("Bad lack!! you have some misstake :)");
         }
+
+        ui->step_button->setEnabled(false);
+        ui->pushButton->setEnabled(false);
 
         msgBox.exec();
     }
@@ -85,4 +49,164 @@ void MainWindow::on_pushButton_clicked()
         msgBox.setText(QString::fromStdString(e.exeption_string));
         msgBox.exec();
     }
+}
+
+void MainWindow::DrawMatrix()
+{
+    ui->table_widget->clear();
+
+    ui->table_widget->setRowCount(pars_table.height_size );
+    ui->table_widget->setColumnCount(pars_table.width_size - 1);
+
+    //first set horizonals header(terminals)
+    for (int i = 0; i < pars_table.terminals.size(); i++)
+        ui->table_widget->setHorizontalHeaderItem(i, new QTableWidgetItem(QString::fromLocal8Bit((pars_table.terminals.at(i).value.c_str()))) );
+
+    //first set vertical header(terminals)
+    for (int i = 0; i < pars_table.height_size; i++)
+        ui->table_widget->setVerticalHeaderItem(i, new QTableWidgetItem(QString::fromLocal8Bit((pars_table.matrix[i][0].value.c_str()))) );
+
+    ui->table_widget->resizeColumnsToContents();
+
+     //new QTableWidgetItem(QString::fromLocal8Bit((pars_table.terminals.at(i).value.c_str()))) );
+    //debug
+    for (int i = 0; i < pars_table.height_size; i++)
+    {
+        for (int j = 1; j < pars_table.width_size; j++)
+        {
+            ui->table_widget->setItem(i, j-1, new QTableWidgetItem(QString::fromLocal8Bit((pars_table.matrix[i][j].value.c_str()))) );
+        }
+    }
+
+}
+
+void MainWindow::PrintTokens()
+{
+    ui->token_list_widget->clear();
+
+    //debug tokens
+    for (Token& t: token_vect)
+         new QListWidgetItem("T:  " + QString::fromLocal8Bit(t.value.c_str()), ui->token_list_widget);
+}
+
+void MainWindow::PrintStack()
+{
+    ui->stack_widget->clear();
+
+    if (!stack.empty())
+    {
+        std::vector<StackElement>::reverse_iterator s_it = stack.rbegin();
+        for (; s_it != stack.rend(); s_it++)
+        {
+            if (s_it->type == ELEMENT_TYPE::terminal)
+            {
+                new QListWidgetItem("T:  " + QString::fromLocal8Bit(s_it->terminal.value.c_str()), ui->stack_widget);
+            }
+            else
+            {
+                new QListWidgetItem("N:  " + QString::fromLocal8Bit(s_it->nonterminal.value.c_str()), ui->stack_widget);
+            }
+        }
+
+        ui->stack_widget->item(0)->setSelected(true);
+    }
+}
+
+void MainWindow::FillData()
+{
+    std::string XML_input = ui->XML_input_plain_text->toPlainText().toStdString();
+
+    lex_analyzer.ReplaceALLWhiteCharsWithSpace(XML_input);
+
+    lex_analyzer.ParseConfigToTokens(XML_input, token_vect);
+
+    Token t;
+    t.type = TOKEN_TYPE::end_of_line;
+    t.value = "$";
+    token_vect.push_back(t);
+
+    actual_token_it = token_vect.begin();
+
+    PrintTokens();
+
+    //fill matrix from file
+    pars_table.FillTablefromFile("table.txt");
+
+    DrawMatrix();
+
+    pars_table.LoadRulesFromFile("new_grammar.txt");
+
+
+}
+
+void MainWindow::on_step_button_clicked()
+{
+    try
+    {
+        SyntacticAnalyzer syn_anal;
+
+        if (!data_filled)
+        {
+            FillData();
+            data_filled = true;
+        }
+
+        if  (actual_token_it == token_vect.begin() && stack.empty())
+        {
+            syn_anal.InsertFirstElementInStack(pars_table, stack);
+        }
+
+        if (stack.empty() && actual_token_it != token_vect.end())
+            throw Exception("Bad INPUT");
+        else if (stack.empty() && actual_token_it == token_vect.end())
+            throw Exception("Good grammer");
+
+        std::vector<std::string> all_vect;
+        syn_anal.FillAllVector(pars_table, all_vect);
+
+        unsigned int x = 0;
+        unsigned int y = 0;
+
+        syn_anal.MakeStepInGrammer(pars_table, actual_token_it, stack, all_vect, x, y);
+
+        ui->table_widget->clearSelection();
+
+        if (!stack.empty())
+        {
+            syn_anal.GetMatrixIndex(pars_table, *actual_token_it, stack.back(), all_vect, x, y);
+            QModelIndex index = ui->table_widget->model()->index(x, y-1);
+            ui->table_widget->selectionModel()->select(index, QItemSelectionModel::Select);
+        }
+
+        PrintStack();
+
+        ui->token_list_widget->item(std::distance(token_vect.begin(), actual_token_it))->setSelected(true);
+
+
+    }
+    catch(Exception e)
+    {
+        QMessageBox msgBox;
+        msgBox.setText(QString::fromStdString(e.exeption_string));
+        msgBox.exec();
+        ui->step_button->setEnabled(false);
+        ui->pushButton->setEnabled(false);
+    }
+}
+
+void MainWindow::on_revert_button_clicked()
+{
+   ParsingTable p;
+
+   data_filled = false;
+   stack.clear();
+   pars_table = p;
+   token_vect.clear();
+
+   ui->token_list_widget->clear();
+   ui->table_widget->clear();
+   ui->stack_widget->clear();
+
+   ui->step_button->setEnabled(true);
+   ui->pushButton->setEnabled(true);
 }
