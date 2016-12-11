@@ -59,7 +59,10 @@ void ParsingTable::FillTablefromFile(std::string name_of_file)
              std::vector<std::string> temp_vect;
              getline(file,line);
 
-             if (line == "")    //skip empty lines
+             //check if string is from white characters
+             std::string temp_string = line;
+             temp_string.erase( remove_if(temp_string.begin(), temp_string.end(), ::isspace), temp_string.end());
+             if (temp_string == "")    //skip empty lines
                  continue;
 
              lex_anal.ReplaceALLWhiteCharsWithSpace(line);

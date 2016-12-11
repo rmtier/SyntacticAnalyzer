@@ -114,17 +114,26 @@ void MainWindow::PrintStack()
 
 void MainWindow::FillData()
 {
+    CleanData();
+
     std::string XML_input = ui->XML_input_plain_text->toPlainText().toStdString();
 
     lex_analyzer.ReplaceALLWhiteCharsWithSpace(XML_input);
 
     lex_analyzer.ParseConfigToTokens(XML_input, token_vect);
 
-    Token t;
-    t.type = TOKEN_TYPE::end_of_line;
-    t.value = "$";
-    token_vect.push_back(t);
-
+    if (token_vect.size() > 1)
+    {
+        std::vector<Token>::iterator it = std::next(token_vect.begin());
+        while ( it != token_vect.end() )
+        {
+            if (it->type == TOKEN_TYPE::space &&
+                    (std::prev(it)->type != TOKEN_TYPE::let ))
+                it = token_vect.erase(it);
+            else
+                ++it;
+        }
+    }
     actual_token_it = token_vect.begin();
 
     PrintTokens();
@@ -137,6 +146,16 @@ void MainWindow::FillData()
     pars_table.LoadRulesFromFile("new_grammar.txt");
 
 
+}
+
+void MainWindow::CleanData()
+{
+    ParsingTable p;
+
+    data_filled = false;
+    stack.clear();
+    pars_table = p;
+    token_vect.clear();
 }
 
 void MainWindow::on_step_button_clicked()
@@ -184,6 +203,11 @@ void MainWindow::on_step_button_clicked()
             ui->table_widget->scrollTo(index, QAbstractItemView::PositionAtCenter);
         }
 
+        if (stack.empty() && actual_token_it != token_vect.end())
+            throw Exception("Bad INPUT");
+        else if (stack.empty() && actual_token_it == token_vect.end())
+            throw Exception("Good grammer");
+
         PrintStack();
 
         QListWidgetItem * item = ui->token_list_widget->item(std::distance(token_vect.begin(), actual_token_it));
@@ -193,10 +217,6 @@ void MainWindow::on_step_button_clicked()
         QModelIndex index = ui->token_list_widget->model()->index(std::distance(token_vect.begin(), actual_token_it), 0);
         ui->token_list_widget->scrollTo(index, QAbstractItemView::EnsureVisible);
 
-        if (stack.empty() && actual_token_it != token_vect.end())
-            throw Exception("Bad INPUT");
-        else if (stack.empty() && actual_token_it == token_vect.end())
-            throw Exception("Good grammer");
     }
     catch(Exception e)
     {
@@ -210,12 +230,7 @@ void MainWindow::on_step_button_clicked()
 
 void MainWindow::on_revert_button_clicked()
 {
-   ParsingTable p;
-
-   data_filled = false;
-   stack.clear();
-   pars_table = p;
-   token_vect.clear();
+    CleanData();
 
    ui->token_list_widget->clear();
    ui->table_widget->clear();

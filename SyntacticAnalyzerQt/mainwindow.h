@@ -32,6 +32,7 @@ public:
     void PrintTokens();
     void PrintStack();
     void FillData();
+    void CleanData();
 
 private:
     Ui::MainWindow *ui;

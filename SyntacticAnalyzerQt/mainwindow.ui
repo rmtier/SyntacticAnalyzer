@@ -56,7 +56,7 @@
         <item>
          <widget class="QLabel" name="label">
           <property name="text">
-           <string>Syntactic analyzer tokens</string>
+           <string>Lexical analyzer tokens</string>
           </property>
          </widget>
         </item>
